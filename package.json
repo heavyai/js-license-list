@@ -1,0 +1,12 @@
+{
+  "name": "generate-third-party-licenses",
+  "version": "1.0.0",
+  "description": "Generates a THIRD_PARTY_LICENSES.md file listing all npm dependencies and their licenses",
+  "bin": {
+    "generate-third-party-licenses": "./generate-third-party-licenses.js"
+  },
+  "dependencies": {
+    "license-checker": "^25.0.1"
+  },
+  "license": "MIT"
+}
