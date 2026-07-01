@@ -2,10 +2,55 @@
 
 const fs = require('fs');
 const path = require('path');
-const licenseChecker = require('license-checker');
 
 const PROJECT_ROOT = process.cwd();
-const OUTPUT_PATH = path.join(PROJECT_ROOT, 'license/THIRD_PARTY_LICENSES.md');
+const DEFAULT_OUTPUT_DIR = 'third_party_licenses';
+const OUTPUT_FILENAME = 'THIRD_PARTY_LICENSES.md';
+
+function parseArgs(argv) {
+  const options = { outputDir: DEFAULT_OUTPUT_DIR, help: false };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '-h' || arg === '--help') {
+      options.help = true;
+    } else if (arg === '-o' || arg === '--output-dir') {
+      const next = argv[i + 1];
+      if (!next || next.startsWith('-')) {
+        console.error(`Error: ${arg} requires a directory argument`);
+        process.exit(1);
+      }
+      options.outputDir = next;
+      i++;
+    } else if (arg.startsWith('--output-dir=')) {
+      options.outputDir = arg.slice('--output-dir='.length);
+    } else {
+      console.error(`Error: unknown argument: ${arg}`);
+      process.exit(1);
+    }
+  }
+  return options;
+}
+
+function printHelp() {
+  console.log(`Usage: generate-third-party-licenses [options]
+
+Options:
+  -o, --output-dir <dir>   Directory to write ${OUTPUT_FILENAME} into
+                           (default: ${DEFAULT_OUTPUT_DIR})
+  -h, --help               Show this help message
+`);
+}
+
+const options = parseArgs(process.argv.slice(2));
+if (options.help) {
+  printHelp();
+  process.exit(0);
+}
+
+const OUTPUT_DIR = path.isAbsolute(options.outputDir)
+  ? options.outputDir
+  : path.join(PROJECT_ROOT, options.outputDir);
+const OUTPUT_PATH = path.join(OUTPUT_DIR, OUTPUT_FILENAME);
 
 const spdxUrls = {
   '0BSD': 'https://spdx.org/licenses/0BSD.html',
@@ -57,7 +102,9 @@ function getLicenseUrl(license, repository) {
   return repository || '';
 }
 
-fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
+fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+
+const licenseChecker = require('license-checker');
 
 licenseChecker.init({ start: PROJECT_ROOT }, (err, data) => {
   if (err) {
